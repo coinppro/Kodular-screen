@@ -261,7 +261,8 @@
       document.body.classList.remove("locked");
 
       startCountdown(expirationTime);
-
+      
+window.AppInventor.setWebViewString("unlocked");
     } else {
 
       alert("Invalid access code.");
