@@ -1,274 +1,152 @@
 <style>
-
   #screen-lock {
-
     position: fixed;
-
     top: 0;
-
     left: 0;
-
     width: 100%;
-
     height: 100%;
-
     background: rgba(0, 0, 0, 0.3);
-
     backdrop-filter: blur(5px);
-
     z-index: 9999;
-
     display: flex;
-
     align-items: center;
-
     justify-content: center;
-
     overflow: hidden;
-
   }
-
   #lock-box {
-
     text-align: center;
-
     background: white;
-
     padding: 30px;
-
     border-radius: 16px;
-
     box-shadow: 0 0 20px rgba(0,0,0,0.2);
-
     font-family: 'Arial', sans-serif;
-
   }
-
   #access-input, #duration-select {
-
     padding: 12px 16px;
-
     font-size: 16px;
-
     border-radius: 20px;
-
     border: 1px solid #ccc;
-
     width: 250px;
-
     margin-bottom: 10px;
-
     outline: none;
-
   }
-
   #unlock-btn {
-
     padding: 12px 20px;
-
     font-size: 16px;
-
     background: linear-gradient(to right, #8e2de2, #4a00e0);
-
     color: white;
-
     border: none;
-
     border-radius: 20px;
-
     cursor: pointer;
-
   }
-
   #unlock-btn:hover {
-
     opacity: 0.9;
-
   }
-
   body.locked {
-
     overflow: hidden !important;
-
     height: 100vh;
-
     position: fixed;
-
     width: 100%;
-
   }
-
   #countdown-timer {
-
     font-size: 12px;
-
     margin-top: 10px;
-
   }
-
 </style>
 
 <div id="screen-lock">
-
   <div id="lock-box">
-
     <h2 style="margin-bottom: 20px;">Please enter the access code</h2>
-
     <select id="duration-select">
-
       <option value="minute" />1 minute (Code: 1234)
-
       <option value="day" />1 day (Code: dgkdd)
-
       <option value="7days" />7 days (Code: 123456)
-
       <option value="30days" />30 days (Code: 1234567)
-
     </select><br/>
-
     <input type="text" id="access-input" placeholder="Enter access code" />
-
     <button id="unlock-btn">Continue</button>
-
     <div id="countdown-timer"></div>
-
   </div>
-
 </div>
 
 <script>
-
   document.body.classList.add("locked");
 
   function getExpirationTime(type, value) {
-
     const now = new Date();
-
     if (type === "minute") {
-
       now.setMinutes(now.getMinutes() + value);
-
     } else if (type === "day") {
-
       now.setDate(now.getDate() + value);
-
     }
-
     return now.getTime();
-
   }
 
   const codes = {
-
     minute: { code: "1234", type: "minute", value: 1 },
-
     day: { code: "dgkdd", type: "day", value: 1 },
-
     "7days": { code: "123456", type: "day", value: 7 },
-
     "30days": { code: "1234567", type: "day", value: 30 }
-
   };
 
   let countdownInterval;
 
   function startCountdown(expirationTime) {
-
     clearInterval(countdownInterval);
-
     const countdownElement = document.getElementById("countdown-timer");
-
     countdownInterval = setInterval(function () {
-
       const now = new Date().getTime();
-
       const distance = expirationTime - now;
 
       const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
       const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-
       const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
       countdownElement.innerHTML = `Time remaining: ${hours}h ${minutes}m ${seconds}s`;
 
       if (distance < 0) {
-
         clearInterval(countdownInterval);
-
         countdownElement.innerHTML = "Expired! Please re-enter the code.";
-
         document.getElementById("screen-lock").style.display = "flex";
-
         document.body.classList.add("locked");
-
-        sessionStorage.removeItem("access_granted");
-
-        sessionStorage.removeItem("expiration_time");
-
+        localStorage.removeItem("access_granted");
+        localStorage.removeItem("expiration_time");
       }
-
     }, 1000);
-
   }
 
-  const savedAccess = sessionStorage.getItem("access_granted");
-
-  const savedExpire = sessionStorage.getItem("expiration_time");
+  const savedAccess = localStorage.getItem("access_granted");
+  const savedExpire = localStorage.getItem("expiration_time");
 
   if (savedAccess && savedExpire) {
-
     const expirationTime = parseInt(savedExpire);
-
     const now = new Date().getTime();
-
     if (now < expirationTime) {
-
       document.getElementById("screen-lock").style.display = "none";
-
       document.body.classList.remove("locked");
-
       startCountdown(expirationTime);
-
+      window.AppInventor.setWebViewString("unlocked");
     } else {
-
-      sessionStorage.removeItem("access_granted");
-
-      sessionStorage.removeItem("expiration_time");
-
+      localStorage.removeItem("access_granted");
+      localStorage.removeItem("expiration_time");
     }
-
   }
 
   document.getElementById("unlock-btn").addEventListener("click", function () {
-
     const inputCode = document.getElementById("access-input").value.trim();
-
     const selected = document.getElementById("duration-select").value;
-
     const selectedCode = codes[selected];
 
     if (inputCode === selectedCode.code) {
-
       const expirationTime = getExpirationTime(selectedCode.type, selectedCode.value);
-
-      sessionStorage.setItem("access_granted", true);
-
-      sessionStorage.setItem("expiration_time", expirationTime);
-
+      localStorage.setItem("access_granted", true);
+      localStorage.setItem("expiration_time", expirationTime);
       document.getElementById("screen-lock").style.display = "none";
-
       document.body.classList.remove("locked");
-
       startCountdown(expirationTime);
-      
-window.AppInventor.setWebViewString("unlocked");
+      window.AppInventor.setWebViewString("unlocked");
     } else {
-
       alert("Invalid access code.");
-
     }
-
   });
-
 </script>
