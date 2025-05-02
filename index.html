@@ -1,160 +1,42 @@
-
-
-  <meta content='width=device-width, initial-scale=1.0, user-scalable=1.0, minimum-scale=1.0, maximum-scale=5.0' name='viewport'/>
-
 <style>
-  body {
-zoom: 0.8; /* ลดขนาดเว็บลงเหลือ 80% */
-
+  body.stop-scroll {
+    overflow: hidden;
   }
-  #screen-lock {
+
+  #ad-banner {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(5px);
-    z-index: 9999;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(4px);
     display: flex;
-    align-items: center;
     justify-content: center;
-    overflow: hidden;
+    align-items: center;
+    z-index: 10; /* พอให้บัง iframe แต่ไม่บังเมนู */
   }
-  #lock-box {
-    text-align: center;
+
+  #ad-inner {
     background: white;
-    padding: 30px;
-    border-radius: 16px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.2);
-    font-family: 'Arial', sans-serif;
-  }
-  #access-input, #duration-select {
-    padding: 12px 16px;
-    font-size: 16px;
-    border-radius: 20px;
-    border: 1px solid #ccc;
-    width: 250px;
-    margin-bottom: 10px;
-    outline: none;
-  }
-  #unlock-btn {
-    padding: 12px 20px;
-    font-size: 16px;
-    background: linear-gradient(to right, #8e2de2, #4a00e0);
-    color: white;
-    border: none;
-    border-radius: 20px;
-    cursor: pointer;
-  }
-  #unlock-btn:hover {
-    opacity: 0.9;
-  }
-  body.locked {
-    overflow: hidden !important;
-    height: 100vh;
-    position: fixed;
-    width: 100%;
-  }
-  #countdown-timer {
-    font-size: 12px;
-    margin-top: 10px;
+    padding: 5px;
+    border-radius: 8px;
+    text-align: center;
+    max-width: 100%;
+    max-height: 100%;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
   }
 </style>
 
-<div id="screen-lock">
-  <div id="lock-box">
-    <h2 style="margin-bottom: 20px;">Please enter the access code</h2>
-    <select id="duration-select">
-      <option value="minute" />1 minute (Code:)
-      <option value="day" />1 day (Code: zsdvc)
-      <option value="7days" />7 days (Code:)
-      <option value="30days" />30 days (Code:)
-    </select><br/>
-    <input type="text" id="access-input" placeholder="Enter access code" />
-    <button id="unlock-btn">Continue</button>
-    <div id="countdown-timer"></div>
+<div id="ad-banner">
+  <div id="ad-inner">
+    <a href="https://bulkget.blogspot.com/?m=1" target="_blank" rel="noopener">
+      <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi48Nlavqbv7m2yXMavxnODctPvKvhst4iKyWN0OMZlyHAYANRTOr3rkbK_BY7GJ59ESdP1wdbtQXAgYT9Sy6i4GX4Rq6c7dAebgrknJpq6Mi4er4L5IrS39qQ_zsAbOrZI96wxa0LQmtY1QPKJP-9P970JN6ONe0-1JRt2g3B_jqYz_hYG11RWe2PP/s320/1000173752.png" alt="Ad" style="width: 100%; max-width: 1200px; height: auto; border-radius: 6px;" />
+    </a>
   </div>
 </div>
 
 <script>
-  document.body.classList.add("locked");
-
-  function getExpirationTime(type, value) {
-    const now = new Date();
-    if (type === "minute") {
-      now.setMinutes(now.getMinutes() + value);
-    } else if (type === "day") {
-      now.setDate(now.getDate() + value);
-    }
-    return now.getTime();
-  }
-
-  const codes = {
-    minute: { code: "1234", type: "minute", value: 1 },
-    day: { code: "zsdvc", type: "day", value: 1 },
-    "7days": { code: "123456", type: "day", value: 7 },
-    "30days": { code: "1234567", type: "day", value: 30 }
-  };
-
-  let countdownInterval;
-
-  function startCountdown(expirationTime) {
-    clearInterval(countdownInterval);
-    const countdownElement = document.getElementById("countdown-timer");
-    countdownInterval = setInterval(function () {
-      const now = new Date().getTime();
-      const distance = expirationTime - now;
-
-      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-      countdownElement.innerHTML = `Time remaining: ${hours}h ${minutes}m ${seconds}s`;
-
-      if (distance < 0) {
-        clearInterval(countdownInterval);
-        countdownElement.innerHTML = "Expired! Please re-enter the code.";
-        document.getElementById("screen-lock").style.display = "flex";
-        document.body.classList.add("locked");
-        localStorage.removeItem("access_granted");
-        localStorage.removeItem("expiration_time");
-      }
-    }, 1000);
-  }
-
-  const savedAccess = localStorage.getItem("access_granted");
-  const savedExpire = localStorage.getItem("expiration_time");
-
-  if (savedAccess && savedExpire) {
-    const expirationTime = parseInt(savedExpire);
-    const now = new Date().getTime();
-    if (now < expirationTime) {
-      document.getElementById("screen-lock").style.display = "none";
-      document.body.classList.remove("locked");
-      startCountdown(expirationTime);
-      window.AppInventor.setWebViewString("unlocked");
-    } else {
-      localStorage.removeItem("access_granted");
-      localStorage.removeItem("expiration_time");
-    }
-  }
-
-  document.getElementById("unlock-btn").addEventListener("click", function () {
-    const inputCode = document.getElementById("access-input").value.trim();
-    const selected = document.getElementById("duration-select").value;
-    const selectedCode = codes[selected];
-
-    if (inputCode === selectedCode.code) {
-      const expirationTime = getExpirationTime(selectedCode.type, selectedCode.value);
-      localStorage.setItem("access_granted", true);
-      localStorage.setItem("expiration_time", expirationTime);
-      document.getElementById("screen-lock").style.display = "none";
-      document.body.classList.remove("locked");
-      startCountdown(expirationTime);
-      window.AppInventor.setWebViewString("unlocked");
-    } else {
-      alert("Invalid access code.");
-    }
-  });
+  // เมื่อโหลดเสร็จ ให้หยุดการเลื่อน
+  document.body.classList.add('stop-scroll');
 </script>
